@@ -13,7 +13,27 @@ const getExpenses = async (): Promise<Expense[]> => {
   return await prisma.expense.findMany();
 }
 
+const deleteExpense = async (id: string) => {
+  await prisma.expense.delete({
+    where: {
+      id
+    }
+  })
+}
+
+const deleteExpenses = async (ids: string[])   => {
+  await prisma.expense.deleteMany({
+    where: {
+      id: {
+        in: ids
+      }
+    }
+  })
+}
+
 export {
   createExpense,
-  getExpenses
+  getExpenses,
+  deleteExpense,
+  deleteExpenses
 }

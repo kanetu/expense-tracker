@@ -15,7 +15,9 @@ const CreateExpense = () => {
       <Button variant="outline" onClick={handleOnClick}>
         + Expense
       </Button>
-      <ExpenseDialog open={openDialog} onOpenChange={handleOnClick} />
+      {openDialog && (
+        <ExpenseDialog open={openDialog} onOpenChange={handleOnClick} />
+      )}
     </div>
   );
 };

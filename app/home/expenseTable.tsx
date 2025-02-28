@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -29,24 +28,44 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import React from "react";
+import React, { useState } from "react";
+import Alert from "../ui/alert/alert";
+import generateColumns from "./columns";
+import { Expense } from "@prisma/client";
+import { deleteExpense, deleteExpenses } from "../actions/expenses";
+import { useRouter } from "next/navigation";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+interface ExpenseTableProps {
+  data: Expense[];
 }
 
-export function DataTable<TData, TValue>({
-  columns,
-  data,
-}: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+export function ExpenseTable({ data }: ExpenseTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
+  const [openAlertDeleteExpense, setOpenAlertDeleteExpense] = useState(false);
+  const [openAlertDeleteExpenses, setOpenAlertDeleteExpenses] = useState(false);
+  const [selectedId, setSelectedId] = useState("");
+  const router = useRouter();
+
+  const handleOpenAlertDeleteExpense = (id: string) => {
+    setOpenAlertDeleteExpense(true);
+    setSelectedId(id);
+  };
+
+  const handleDeleteExpense = async () => {
+    await deleteExpense(selectedId);
+    router.refresh();
+  };
+
+  const handleDeleteExpenses = async () => {
+    await deleteExpenses(Object.keys(rowSelection));
+    router.refresh();
+  };
+  const columns = generateColumns(handleOpenAlertDeleteExpense);
 
   const table = useReactTable({
     data,
@@ -59,6 +78,7 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    getRowId: (row) => row.id,
     state: {
       sorting,
       columnFilters,
@@ -66,6 +86,14 @@ export function DataTable<TData, TValue>({
       rowSelection,
     },
   });
+
+  const renderDeletingExpenses = () => (
+    <ul>
+      {Object.keys(rowSelection).map((row: string) => (
+        <li key={row}>{row}</li>
+      ))}
+    </ul>
+  );
 
   return (
     <div className="w-full">
@@ -78,6 +106,24 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            asChild
+            disabled={!(Object.keys(rowSelection).length > 0)}
+          >
+            <Button variant="outline" className="ml-2">
+              Actions <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuCheckboxItem
+              className="capitalize"
+              onCheckedChange={() => setOpenAlertDeleteExpenses(true)}
+            >
+              Delete
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -179,6 +225,20 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+      <Alert
+        title="Are you sure to delete?"
+        content={`Expense: ${selectedId}`}
+        open={openAlertDeleteExpense}
+        onOpenChange={setOpenAlertDeleteExpense}
+        onSubmitAction={handleDeleteExpense}
+      />
+      <Alert
+        title="Are you sure to delete those expenses?"
+        content={renderDeletingExpenses()}
+        open={openAlertDeleteExpenses}
+        onOpenChange={setOpenAlertDeleteExpenses}
+        onSubmitAction={handleDeleteExpenses}
+      />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { getExpenses } from "../actions/expenses";
 import CreateExpense from "../ui/createExpense/createExpense";
-import { columns } from "./columns";
-import { DataTable } from "./data-table";
+import { ExpenseTable } from "./expenseTable";
 
 const Home = async () => {
   const data = await getExpenses();
@@ -9,7 +8,7 @@ const Home = async () => {
   return (
     <div className="flex flex-col">
       <CreateExpense />
-      <DataTable columns={columns} data={data} />
+      <ExpenseTable data={data} />
     </div>
   );
 };
